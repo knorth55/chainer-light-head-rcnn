@@ -257,7 +257,7 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         global_col = self.global_col(global_col)
         global_row = self.global_row_max(x)
         global_row = self.global_row(global_row)
-        h = global_col + global_row
+        h = F.relu(global_col + global_row)
         # psroi max align
         pool = psroi_max_align_2d(
             h, rois, roi_indices,
