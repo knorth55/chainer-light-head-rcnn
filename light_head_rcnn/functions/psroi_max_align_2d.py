@@ -379,7 +379,7 @@ class PSROIMaxAlign2D(function.Function):
                 roi_bin_grid_w = np.ceil(roi_width / pooled_width)
 
             maxidx = self.argmax_data[n, ctop, ph, pw]
-            iy = maxidx // roi_bin_grid_w
+            iy = int(maxidx / roi_bin_grid_w)
             ix = maxidx % roi_bin_grid_w
 
             y = roi_start_h + ph * bin_size_h + \
