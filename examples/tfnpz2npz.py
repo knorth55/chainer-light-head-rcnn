@@ -114,16 +114,16 @@ def main():
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'rpn_bbox_pred':  # rpn loc
             if key_list[2] == 'weights':
-                value = value.transpose((3, 2, 0, 1))
-                value = value.reshape((-1, 4, 512, 1, 1))
+                value = value.reshape((1, 1, 512, 15, 4))
+                value = value.transpose((3, 4, 2, 0, 1))
                 value = value[:, [1, 0, 3, 2]]
-                value = value.reshape((-1, 512, 1, 1))
+                value = value.reshape((60, 512, 1, 1))
                 assert model.rpn.loc.W.shape == value.shape
                 model.rpn.loc.W.array[:] = value
             elif key_list[2] == 'biases':
-                value = value.reshape((-1, 4))
+                value = value.reshape((15, 4))
                 value = value[:, [1, 0, 3, 2]]
-                value = value.reshape((-1))
+                value = value.reshape((60))
                 assert model.rpn.loc.b.shape == value.shape
                 model.rpn.loc.b.array[:] = value
             else:
@@ -170,7 +170,9 @@ def main():
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'ps_fc_1':  # fc1
             if key_list[2] == 'weights':
-                value = value.transpose((1, 0))
+                value = value.reshape((49, 10, 2048))
+                value = value.transpose((2, 1, 0))
+                value = value.reshape((2048, 490))
                 assert model.head.fc1.W.shape == value.shape
                 model.head.fc1.W.array[:] = value
             elif key_list[2] == 'biases':
@@ -190,16 +192,16 @@ def main():
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'bbox_fc':  # loc
             if key_list[2] == 'weights':
-                value = value.transpose((1, 0))
-                value = value.reshape((-1, 4, 2048))
+                value = value.reshape((2048, 81, 4))
+                value = value.transpose((1, 2, 0))
                 value = value[:, [1, 0, 3, 2]]
-                value = value.reshape((-1, 2048))
+                value = value.reshape((81 * 4, 2048))
                 assert model.head.cls_loc.W.shape == value.shape
                 model.head.cls_loc.W.array[:] = value
             elif key_list[2] == 'biases':
-                value = value.reshape((-1, 4))
+                value = value.reshape((81, 4))
                 value = value[:, [1, 0, 3, 2]]
-                value = value.reshape((-1))
+                value = value.reshape((4 * 81, ))
                 assert model.head.cls_loc.b.shape == value.shape
                 model.head.cls_loc.b.array[:] = value
             else:
