@@ -262,7 +262,8 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         pool = psroi_max_align_2d(
             h, rois, roi_indices,
             10, self.roi_size, self.roi_size,
-            self.spatial_scale, self.roi_size)
+            self.spatial_scale, self.roi_size,
+            sampling_ratio=2.)
         # fc
         fc1 = F.relu(self.fc1(pool))
         roi_cls_locs = self.cls_loc(fc1)
