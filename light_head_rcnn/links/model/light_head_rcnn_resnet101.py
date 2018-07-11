@@ -102,7 +102,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             {'n_fg_class': n_fg_class}, pretrained_model, self._models)
 
         if resnet_initialW is None and pretrained_model:
-            resnet_initialW = chainer.initializers.constant.HeNormal()
+            resnet_initialW = chainer.initializers.HeNormal()
         if rpn_initialW is None:
             rpn_initialW = chainer.initializers.Normal(0.01)
         if loc_initialW is None:
@@ -115,7 +115,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
         extractor = ResNet101Extractor(
             initialW=resnet_initialW)
         rpn = RegionProposalNetwork(
-            512, 512,
+            1024, 512,
             ratios=ratios,
             anchor_scales=anchor_scales,
             feat_stride=self.feat_stride,
@@ -131,7 +131,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             score_initialW=score_initialW
         )
         mean = np.array([122.7717, 115.9465, 102.9801],
-                        dtype=np.float32)[:, None, None],
+                        dtype=np.float32)[:, None, None]
 
         super(LightHeadRCNNResNet101, self).__init__(
             extractor, rpn, head, mean, min_size, max_size,
@@ -232,16 +232,17 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
     ):
 
         super(LightHeadRCNNResNet101Head, self).__init__()
+        self.n_class = n_class
         self.spatial_scale = spatial_scale
         self.roi_size = roi_size
         with self.init_scope():
             self.global_col_max = L.Convolution2D(
-                512, 256, (15, 1), initialW=global_module_initialW)
+                2048, 256, (15, 1), initialW=global_module_initialW)
             self.global_col = L.Convolution2D(
                 256, self.roi_size*self.roi_size*10, (1, 15),
                 initialW=global_module_initialW)
             self.global_row_max = L.Convolution2D(
-                512, 256, (1, 15), initialW=global_module_initialW)
+                2048, 256, (1, 15), initialW=global_module_initialW)
             self.global_row = L.Convolution2D(
                 256, self.roi_size*self.roi_size*10, (15, 1),
                 initialW=global_module_initialW)
@@ -256,7 +257,7 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         global_col = self.global_col(global_col)
         global_row = self.global_row_max(x)
         global_row = self.global_row(global_row)
-        h = F.add((global_col, global_row))
+        h = global_col + global_row
         # psroi align
         pool = psroi_align_2d(
             h, rois, roi_indices,
