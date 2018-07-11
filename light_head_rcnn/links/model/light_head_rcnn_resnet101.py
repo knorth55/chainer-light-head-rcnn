@@ -12,7 +12,7 @@ from chainercv.links.model.resnet.resblock import ResBlock
 from chainercv.links import ResNet101
 from chainercv import utils
 
-from light_head_rcnn.functions import psroi_align_2d
+from light_head_rcnn.functions import psroi_max_align_2d
 from light_head_rcnn.links.model.light_head_rcnn_base import LightHeadRCNN
 
 
@@ -258,8 +258,8 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         global_row = self.global_row_max(x)
         global_row = self.global_row(global_row)
         h = global_col + global_row
-        # psroi align
-        pool = psroi_align_2d(
+        # psroi max align
+        pool = psroi_max_align_2d(
             h, rois, roi_indices,
             10, self.roi_size, self.roi_size,
             self.spatial_scale, self.roi_size)
