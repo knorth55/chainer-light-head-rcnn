@@ -11,31 +11,41 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--out', '-o', type=str, default='chainer_light_head_rcnn.npz')
-    parser.add_argument('tlmodel')
+    parser.add_argument('tfmodel')
     args = parser.parse_args()
-    model = LightHeadRCNNResNet101(n_fg_class=80)
+    tf_data = np.load(args.tfmodel)
+    model = LightHeadRCNNResNet101(n_fg_class=80, pretrained_model='imagenet')
 
-    tl_data = np.load(args.tlmodel)
-    for key in tl_data.keys():
-        value = tl_data[key]
+    for key in tf_data.keys():
+        value = tf_data[key]
         key_list = re.split('/|:', key)
         if key_list[1] == 'conv1':  # conv1
             if key_list[2] == 'weights':  # conv
                 value = value.transpose((3, 2, 0, 1))
                 assert model.extractor.conv1.conv.W.shape == value.shape
+                np.testing.assert_array_equal(
+                    model.extractor.conv1.conv.W.array, value)
                 model.extractor.conv1.conv.W.array[:] = value
             elif key_list[2] == 'BatchNorm':  # bn
                 if key_list[3] == 'gamma':  # gamma
                     assert model.extractor.conv1.bn.gamma.shape == value.shape
+                    np.testing.assert_array_equal(
+                        model.extractor.conv1.bn.gamma.array, value)
                     model.extractor.conv1.bn.gamma.array[:] = value
                 elif key_list[3] == 'beta':  # beta
                     assert model.extractor.conv1.bn.beta.shape == value.shape
+                    np.testing.assert_array_equal(
+                        model.extractor.conv1.bn.beta.array, value)
                     model.extractor.conv1.bn.beta.array[:] = value
                 elif key_list[3] == 'moving_mean':  # avg_mean
+                    np.testing.assert_array_equal(
+                        model.extractor.conv1.bn.avg_mean, value)
                     assert model.extractor.conv1.bn.avg_mean.shape \
                         == value.shape
                     model.extractor.conv1.bn.avg_mean[:] = value
                 elif key_list[3] == 'moving_variance':  # avg_var
+                    np.testing.assert_array_equal(
+                        model.extractor.conv1.bn.avg_var, value)
                     assert model.extractor.conv1.bn.avg_var.shape \
                         == value.shape
                     model.extractor.conv1.bn.avg_var[:] = value
