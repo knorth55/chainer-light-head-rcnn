@@ -128,44 +128,52 @@ def main():
                 model.rpn.loc.b.array[:] = value
             else:
                 print('param: {} is not converted'.format(key))
-        elif key_list[1] == 'conv_new_1_conv15_w_pre':  # global_col_max
+        elif key_list[1] == 'conv_new_1_conv15_w_pre':  # col_max
             if key_list[2] == 'weights':
                 value = value.transpose((3, 2, 0, 1))
-                assert model.head.global_col_max.W.shape == value.shape
-                model.head.global_col_max.W.array[:] = value
+                assert model.head.global_context_module.col_max.W.shape \
+                    == value.shape
+                model.head.global_context_module.col_max.W.array[:] = value
             elif key_list[2] == 'biases':
-                assert model.head.global_col_max.b.shape == value.shape
-                model.head.global_col_max.b.array[:] = value
+                assert model.head.global_context_module.col_max.b.shape \
+                    == value.shape
+                model.head.global_context_module.col_max.b.array[:] = value
             else:
                 print('param: {} is not converted'.format(key))
-        elif key_list[1] == 'conv_new_1_conv15_w':  # global_col
+        elif key_list[1] == 'conv_new_1_conv15_w':  # col
             if key_list[2] == 'weights':
                 value = value.transpose((3, 2, 0, 1))
-                assert model.head.global_col.W.shape == value.shape
-                model.head.global_col.W.array[:] = value
+                assert model.head.global_context_module.col.W.shape \
+                    == value.shape
+                model.head.global_context_module.col.W.array[:] = value
             elif key_list[2] == 'biases':
-                assert model.head.global_col.b.shape == value.shape
-                model.head.global_col.b.array[:] = value
+                assert model.head.global_context_module.col.b.shape \
+                    == value.shape
+                model.head.global_context_module.col.b.array[:] = value
             else:
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'conv_new_1_conv15_h_pre':  # global_row_max
             if key_list[2] == 'weights':
                 value = value.transpose((3, 2, 0, 1))
-                assert model.head.global_row_max.W.shape == value.shape
-                model.head.global_row_max.W.array[:] = value
+                assert model.head.global_context_module.row_max.W.shape \
+                    == value.shape
+                model.head.global_context_module.row_max.W.array[:] = value
             elif key_list[2] == 'biases':
-                assert model.head.global_row_max.b.shape == value.shape
-                model.head.global_row_max.b.array[:] = value
+                assert model.head.global_context_module.row_max.b.shape \
+                    == value.shape
+                model.head.global_context_module.row_max.b.array[:] = value
             else:
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'conv_new_1_conv15_h':  # global_row
             if key_list[2] == 'weights':
                 value = value.transpose((3, 2, 0, 1))
-                assert model.head.global_row.W.shape == value.shape
-                model.head.global_row.W.array[:] = value
+                assert model.head.global_context_module.row.W.shape \
+                    == value.shape
+                model.head.global_context_module.row.W.array[:] = value
             elif key_list[2] == 'biases':
-                assert model.head.global_row.b.shape == value.shape
-                model.head.global_row.b.array[:] = value
+                assert model.head.global_context_module.row.b.shape \
+                    == value.shape
+                model.head.global_context_module.row.b.array[:] = value
             else:
                 print('param: {} is not converted'.format(key))
         elif key_list[1] == 'ps_fc_1':  # fc1

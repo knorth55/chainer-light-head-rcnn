@@ -6,13 +6,15 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 from chainercv.links import Conv2DBNActiv
-from chainercv.links.model.faster_rcnn.region_proposal_network import \
-    RegionProposalNetwork
+from chainercv.links.model.faster_rcnn.region_proposal_network \
+    import RegionProposalNetwork
 from chainercv.links.model.resnet.resblock import ResBlock
 from chainercv.links import ResNet101
 from chainercv import utils
 
 from light_head_rcnn.functions import psroi_max_align_2d
+from light_head_rcnn.links.model.global_context_module \
+    import GlobalContextModule
 from light_head_rcnn.links.model.light_head_rcnn_base import LightHeadRCNN
 
 
@@ -236,15 +238,8 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         self.spatial_scale = spatial_scale
         self.roi_size = roi_size
         with self.init_scope():
-            self.global_col_max = L.Convolution2D(
-                2048, 256, (15, 1), initialW=global_module_initialW)
-            self.global_col = L.Convolution2D(
-                256, self.roi_size * self.roi_size * 10, (1, 15),
-                initialW=global_module_initialW)
-            self.global_row_max = L.Convolution2D(
-                2048, 256, (1, 15), initialW=global_module_initialW)
-            self.global_row = L.Convolution2D(
-                256, self.roi_size * self.roi_size * 10, (15, 1),
+            self.global_context_module = GlobalContextModule(
+                2048, 256, self.roi_size * self.roi_size * 10, 15,
                 initialW=global_module_initialW)
             self.fc1 = L.Linear(
                 self.roi_size * self.roi_size * 10, 2048,
@@ -254,11 +249,7 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
 
     def __call__(self, x, rois, roi_indices):
         # global context module
-        global_col = self.global_col_max(x)
-        global_col = self.global_col(global_col)
-        global_row = self.global_row_max(x)
-        global_row = self.global_row(global_row)
-        h = F.relu(F.add(global_col, global_row))
+        h = self.global_context_module(x)
         # psroi max align
         pool = psroi_max_align_2d(
             h, rois, roi_indices,
