@@ -239,17 +239,18 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
             self.global_col_max = L.Convolution2D(
                 2048, 256, (15, 1), initialW=global_module_initialW)
             self.global_col = L.Convolution2D(
-                256, self.roi_size*self.roi_size*10, (1, 15),
+                256, self.roi_size * self.roi_size * 10, (1, 15),
                 initialW=global_module_initialW)
             self.global_row_max = L.Convolution2D(
                 2048, 256, (1, 15), initialW=global_module_initialW)
             self.global_row = L.Convolution2D(
-                256, self.roi_size*self.roi_size*10, (15, 1),
+                256, self.roi_size * self.roi_size * 10, (15, 1),
                 initialW=global_module_initialW)
             self.fc1 = L.Linear(
-                self.roi_size*self.roi_size*10, 2048, initialW=score_initialW)
+                self.roi_size * self.roi_size * 10, 2048,
+                initialW=score_initialW)
             self.score = L.Linear(2048, n_class, initialW=score_initialW)
-            self.cls_loc = L.Linear(2048, n_class * 4, initialW=loc_initialW)
+            self.cls_loc = L.Linear(2048, 4 * n_class, initialW=loc_initialW)
 
     def __call__(self, x, rois, roi_indices):
         # global context module
@@ -257,7 +258,7 @@ class LightHeadRCNNResNet101Head(chainer.Chain):
         global_col = self.global_col(global_col)
         global_row = self.global_row_max(x)
         global_row = self.global_row(global_row)
-        h = F.relu(global_col + global_row)
+        h = F.relu(F.add(global_col, global_row))
         # psroi max align
         pool = psroi_max_align_2d(
             h, rois, roi_indices,
