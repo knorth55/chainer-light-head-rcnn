@@ -67,7 +67,7 @@ class LightHeadRCNN(chainer.Chain):
 
     def __init__(
             self, extractor, rpn, head, mean,
-            min_size=600, max_size=1000,
+            min_size=800, max_size=1333,
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
     ):
