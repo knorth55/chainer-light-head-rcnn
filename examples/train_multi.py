@@ -1,10 +1,14 @@
 from __future__ import division
 
 import argparse
+import functools
 import numpy as np
 import random
+import six
 
 import chainer
+from chainer.dataset.convert import _concat_arrays
+from chainer.dataset.convert import to_device
 from chainer.training import extensions
 from chainer.training.triggers import ManualScheduleTrigger
 from chainercv.chainer_experimental.datasets.sliceable \
@@ -21,6 +25,37 @@ import chainermn
 from light_head_rcnn.extensions import ManualScheduler
 from light_head_rcnn.links import LightHeadRCNNResNet101
 from light_head_rcnn.links import LightHeadRCNNTrainChain
+
+
+def concat_examples(batch, device=None, padding=None,
+                    indices_concat=None, indices_to_device=None):
+    if len(batch) == 0:
+        raise ValueError('batch is empty')
+
+    first_elem = batch[0]
+
+    elem_size = len(first_elem)
+    if indices_concat is None:
+        indices_concat = range(elem_size)
+    if indices_to_device is None:
+        indices_to_device = range(elem_size)
+
+    result = []
+    if not isinstance(padding, tuple):
+        padding = [padding] * elem_size
+
+    for i in six.moves.range(elem_size):
+        res = [example[i] for example in batch]
+        if i in indices_concat:
+            res = _concat_arrays(res, padding[i])
+        if i in indices_to_device:
+            if i in indices_concat:
+                res = to_device(device, res)
+            else:
+                res = [to_device(device, r) for r in res]
+        result.append(res)
+
+    return tuple(result)
 
 
 class Transform(object):
@@ -51,6 +86,7 @@ def main():
     parser.add_argument('--out', '-o', default='result',
                         help='Output directory')
     parser.add_argument('--seed', '-s', type=int, default=1234)
+    parser.add_argument('--batch-size', '-b', type=int, default=2)
     args = parser.parse_args()
 
     # chainermn
@@ -86,7 +122,8 @@ def main():
         indices = None
     indices = chainermn.scatter_dataset(indices, comm, shuffle=True)
     train_dataset = train_dataset.slice[indices]
-    train_iter = chainer.iterators.SerialIterator(train_dataset, batch_size=1)
+    train_iter = chainer.iterators.SerialIterator(
+        train_dataset, batch_size=args.batch_size)
 
     if comm.rank == 0:
         test_iter = chainer.iterators.SerialIterator(
@@ -113,14 +150,22 @@ def main():
     model.light_head_rcnn.extractor.conv1.disable_update()
     model.light_head_rcnn.extractor.res2.disable_update()
 
+    converter = functools.partial(
+        concat_examples, padding=0,
+        # img, bboxes, labels, scales
+        indices_concat=[0, 2, 3],  # img, _, labels, scales
+        indices_to_device=[0, 1],  # img, bboxes
+    )
+
     updater = chainer.training.updater.StandardUpdater(
-        train_iter, optimizer, device=device)
+        train_iter, optimizer, converter=converter,
+        device=device)
 
     trainer = chainer.training.Trainer(
         updater, (30, 'epoch'), out=args.out)
 
     def lr_schedule(updater):
-        base_lr = 0.0005 * 1.25 * comm.size
+        base_lr = 0.0005 * 1.25 * args.batch_size * comm.size
         warm_up_duration = 500
         warm_up_rate = 1 / 3
 

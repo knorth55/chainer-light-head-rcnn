@@ -6,8 +6,6 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 from chainercv.links import Conv2DBNActiv
-from chainercv.links.model.faster_rcnn.region_proposal_network \
-    import RegionProposalNetwork
 from chainercv.links.model.resnet.resblock import ResBlock
 from chainercv.links import ResNet101
 from chainercv import utils
@@ -16,6 +14,8 @@ from light_head_rcnn.functions import psroi_max_align_2d
 from light_head_rcnn.links.model.global_context_module \
     import GlobalContextModule
 from light_head_rcnn.links.model.light_head_rcnn_base import LightHeadRCNN
+from light_head_rcnn.links.model.region_proposal_network \
+    import RegionProposalNetwork
 
 
 class LightHeadRCNNResNet101(LightHeadRCNN):

@@ -65,7 +65,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         self.loc_normalize_mean = light_head_rcnn.loc_normalize_mean
         self.loc_normalize_std = light_head_rcnn.loc_normalize_std
 
-    def __call__(self, imgs, bboxes, labels, scale):
+    def __call__(self, imgs, bboxes, labels, scales):
         """Forward Faster R-CNN and calculate losses.
 
         Here are notations used.
@@ -98,72 +98,96 @@ class LightHeadRCNNTrainChain(chainer.Chain):
             bboxes = bboxes.array
         if isinstance(labels, chainer.Variable):
             labels = labels.array
-        if isinstance(scale, chainer.Variable):
-            scale = scale.array
-        scale = np.asscalar(cuda.to_cpu(scale))
-        n = bboxes.shape[0]
-        if n != 1:
-            raise ValueError('Currently only batch size 1 is supported.')
+        if isinstance(scales, chainer.Variable):
+            scales = scales.array
+        scales = cuda.to_cpu(scales)
 
-        _, _, H, W = imgs.shape
+        batch_size, _, H, W = imgs.shape
         img_size = (H, W)
 
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
-            self.light_head_rcnn.rpn(rpn_features, img_size, scale)
+            self.light_head_rcnn.rpn(rpn_features, img_size, scales)
 
-        # Since batch size is one, convert variables to singular form
-        bbox = bboxes[0]
-        label = labels[0]
-        rpn_score = rpn_scores[0]
-        rpn_loc = rpn_locs[0]
-        roi = rois
-
-        if len(bbox) == 0:
+        if any(len(b) == 0 for b in bboxes):
             return chainer.Variable(self.xp.array(0, dtype=np.float32))
 
-        # Sample RoIs and forward
-        sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(
-            roi, bbox, label, self.loc_normalize_mean, self.loc_normalize_std)
-        sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
-        roi_cls_loc, roi_score = self.light_head_rcnn.head(
-            roi_features, sample_roi, sample_roi_index)
+        batch_indices = range(batch_size)
+        sample_rois = []
+        sample_roi_indices = []
+        gt_roi_locs = []
+        gt_roi_labels = []
+
+        for batch_index, bbox, label in \
+                zip(batch_indices, bboxes, labels):
+            roi = rois[roi_indices == batch_index]
+            sample_roi, gt_roi_loc, gt_roi_label = \
+                self.proposal_target_creator(
+                    roi, bbox, label,
+                    self.loc_normalize_mean, self.loc_normalize_std)
+            del roi
+            sample_roi_index = self.xp.full(
+                (len(sample_roi),), batch_index, dtype=np.int32)
+            sample_rois.append(sample_roi)
+            sample_roi_indices.append(sample_roi_index)
+            del sample_roi, sample_roi_index
+            gt_roi_locs.append(gt_roi_loc)
+            gt_roi_labels.append(gt_roi_label)
+            del gt_roi_loc, gt_roi_label
+        sample_rois = self.xp.concatenate(sample_rois, axis=0)
+        sample_roi_indices = self.xp.concatenate(sample_roi_indices, axis=0)
+        gt_roi_locs = self.xp.concatenate(gt_roi_locs, axis=0)
+        gt_roi_labels = self.xp.concatenate(gt_roi_labels, axis=0)
+
+        roi_cls_locs, roi_scores = self.light_head_rcnn.head(
+            roi_features, sample_rois, sample_roi_indices)
 
         # RPN losses
-        gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
-            bbox, anchor, img_size)
+        gt_rpn_locs = []
+        gt_rpn_labels = []
+        for bbox, rpn_loc, rpn_score in zip(bboxes, rpn_locs, rpn_scores):
+            gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
+                bbox, anchor, img_size)
+            gt_rpn_locs.append(gt_rpn_loc)
+            gt_rpn_labels.append(gt_rpn_label)
+            del gt_rpn_loc, gt_rpn_label
+        gt_rpn_locs = self.xp.concatenate(gt_rpn_locs, axis=0)
+        gt_rpn_labels = self.xp.concatenate(gt_rpn_labels, axis=0)
+        rpn_locs = F.concat(rpn_locs, axis=0)
+        rpn_scores = F.concat(rpn_scores, axis=0)
         rpn_loc_loss = _fast_rcnn_loc_loss(
-            rpn_loc, gt_rpn_loc, gt_rpn_label, self.rpn_sigma)
-        rpn_cls_loss = F.softmax_cross_entropy(rpn_score, gt_rpn_label)
+            rpn_locs, gt_rpn_locs, gt_rpn_labels, self.rpn_sigma)
+        rpn_cls_loss = F.softmax_cross_entropy(rpn_scores, gt_rpn_labels)
 
         # Losses for outputs of the head.
         roi_loc_loss, roi_cls_loss = _ohem_loss(
-            roi_score, roi_cls_loc, gt_roi_label, gt_roi_loc,
+            roi_cls_locs, roi_scores, gt_roi_locs, gt_roi_labels,
             self.n_ohem_sample, self.roi_sigma)
         roi_loc_loss = 2 * roi_loc_loss
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss
-        chainer.reporter.report({'rpn_loc_loss': rpn_loc_loss,
-                                 'rpn_cls_loss': rpn_cls_loss,
-                                 'roi_loc_loss': roi_loc_loss,
-                                 'roi_cls_loss': roi_cls_loss,
-                                 'loss': loss},
-                                self)
+        chainer.reporter.report(
+            {'rpn_loc_loss': rpn_loc_loss,
+             'rpn_cls_loss': rpn_cls_loss,
+             'roi_loc_loss': roi_loc_loss,
+             'roi_cls_loss': roi_cls_loss,
+             'loss': loss},
+            self)
         return loss
 
 
 def _ohem_loss(
-        roi_score, roi_cls_loc, gt_roi_label, gt_roi_loc,
+        roi_cls_locs, roi_scores, gt_roi_locs, gt_roi_labels,
         n_ohem_sample, roi_sigma=1.0
 ):
-    xp = cuda.get_array_module(roi_cls_loc)
-    n_sample = roi_cls_loc.shape[0]
-    roi_cls_loc = roi_cls_loc.reshape((n_sample, -1, 4))
-    roi_loc = roi_cls_loc[xp.arange(n_sample), gt_roi_label]
+    xp = cuda.get_array_module(roi_cls_locs)
+    n_sample = roi_cls_locs.shape[0]
+    roi_cls_locs = roi_cls_locs.reshape((n_sample, -1, 4))
+    roi_locs = roi_cls_locs[xp.arange(n_sample), gt_roi_labels]
     roi_loc_loss = _fast_rcnn_loc_loss(
-        roi_loc, gt_roi_loc, gt_roi_label, roi_sigma, reduce='no')
+        roi_locs, gt_roi_locs, gt_roi_labels, roi_sigma, reduce='no')
     roi_cls_loss = F.softmax_cross_entropy(
-        roi_score, gt_roi_label, reduce='no')
+        roi_scores, gt_roi_labels, reduce='no')
     assert roi_loc_loss.shape == roi_cls_loss.shape
 
     roi_cls_loc_loss = roi_loc_loss.array + roi_cls_loss.array

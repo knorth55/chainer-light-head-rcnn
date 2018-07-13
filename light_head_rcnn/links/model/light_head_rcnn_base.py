@@ -89,10 +89,10 @@ class LightHeadRCNN(chainer.Chain):
         # Total number of classes including the background.
         return self.head.n_class
 
-    def __call__(self, x, scale=1.):
+    def __call__(self, x, scales):
         """Forward Light Head R-CNN.
 
-        Scaling paramter :obj:`scale` is used by RPN to determine the
+        Scaling paramter :obj:`scales` is used by RPN to determine the
         threshold to select small objects, which are going to be
         rejected irrespective of their confidence scores.
 
@@ -109,8 +109,8 @@ class LightHeadRCNN(chainer.Chain):
 
         Args:
             x (~chainer.Variable): 4D image variable.
-            scale (float): Amount of scaling applied to the raw image
-                during preprocessing.
+            scales (tuple of float): Amount of scaling applied to the raw
+                image during preprocessing.
 
         Returns:
             Variable, Variable, array, array:
@@ -130,7 +130,7 @@ class LightHeadRCNN(chainer.Chain):
 
         rpn_features, roi_features = self.extractor(x)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = self.rpn(
-            rpn_features, img_size, scale)
+            rpn_features, img_size, scales)
         roi_cls_locs, roi_scores = self.head(
             roi_features, rois, roi_indices)
         return roi_cls_locs, roi_scores, rois, roi_indices
@@ -265,7 +265,7 @@ class LightHeadRCNN(chainer.Chain):
                 img_var = chainer.Variable(self.xp.asarray(img[None]))
                 scale = img_var.shape[3] / size[1]
                 roi_cls_locs, roi_scores, rois, _ = self.__call__(
-                    img_var, scale=scale)
+                    img_var, [scale])
             # We are assuming that batch size is 1.
             roi_cls_loc = roi_cls_locs.array
             roi_score = roi_scores.array
