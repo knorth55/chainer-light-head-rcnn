@@ -162,7 +162,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         # Losses for outputs of the head.
         roi_loc_loss, roi_cls_loss = _ohem_loss(
             roi_cls_locs, roi_scores, gt_roi_locs, gt_roi_labels,
-            self.n_ohem_sample, self.roi_sigma)
+            self.n_ohem_sample * batch_size, self.roi_sigma)
         roi_loc_loss = 2 * roi_loc_loss
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss
