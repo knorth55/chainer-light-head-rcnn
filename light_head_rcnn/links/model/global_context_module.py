@@ -11,14 +11,19 @@ class GlobalContextModule(chainer.Chain):
     ):
         super(GlobalContextModule, self).__init__()
         with self.init_scope():
+            padsize = int((ksize - 1) / 2)
             self.col_max = L.Convolution2D(
-                in_channels, mid_channels, (ksize, 1), initialW=initialW)
+                in_channels, mid_channels, (ksize, 1), 1, (padsize, 1),
+                initialW=initialW)
             self.col = L.Convolution2D(
-                mid_channels, out_channels, (1, ksize), initialW=initialW)
+                mid_channels, out_channels, (1, ksize), 1, (1, padsize),
+                initialW=initialW)
             self.row_max = L.Convolution2D(
-                in_channels, mid_channels, (1, ksize), initialW=initialW)
+                in_channels, mid_channels, (1, ksize), 1, (1, padsize),
+                initialW=initialW)
             self.row = L.Convolution2D(
-                mid_channels, out_channels, (ksize, 1), initialW=initialW)
+                mid_channels, out_channels, (ksize, 1), 1, (padsize, 1),
+                initialW=initialW)
 
     def __call__(self, x):
         h_col = self.col(self.col_max(x))
