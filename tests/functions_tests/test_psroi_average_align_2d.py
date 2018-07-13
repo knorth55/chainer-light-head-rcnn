@@ -10,7 +10,7 @@ import unittest
 from light_head_rcnn import functions
 
 
-class TestPSROIPolling2D(unittest.TestCase):
+class TestPSROIAverageAlign2D(unittest.TestCase):
 
     def setUp(self):
         self.N = 3
@@ -43,7 +43,7 @@ class TestPSROIPolling2D(unittest.TestCase):
         x = chainer.Variable(x_data)
         rois = chainer.Variable(roi_data)
         roi_indices = chainer.Variable(roi_index_data)
-        y = functions.psroi_align_2d(
+        y = functions.psroi_average_align_2d(
             x, rois, roi_indices, self.out_c, self.out_h, self.out_w,
             self.spatial_scale, self.group_size)
         self.assertEqual(y.data.dtype, np.float32)
@@ -64,7 +64,7 @@ class TestPSROIPolling2D(unittest.TestCase):
 
     def check_backward(self, x_data, roi_data, roi_index_data, y_grad_data):
         gradient_check.check_backward(
-            functions.PSROIAlign2D(
+            functions.PSROIAverageAlign2D(
                 self.out_c, self.out_h, self.out_w,
                 self.spatial_scale, self.group_size),
             (x_data, roi_data, roi_index_data), y_grad_data,
@@ -85,7 +85,7 @@ class TestPSROIPolling2D(unittest.TestCase):
         x = chainer.Variable(x_data)
         rois = chainer.Variable(roi_data)
         roi_indices = chainer.Variable(roi_index_data)
-        y = functions.psroi_align_2d(
+        y = functions.psroi_average_align_2d(
             x, rois, roi_indices, self.out_c, self.out_h, self.out_w,
             self.spatial_scale, self.group_size)
         x.cleargrad()

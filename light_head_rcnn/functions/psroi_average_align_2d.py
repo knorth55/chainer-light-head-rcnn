@@ -46,7 +46,7 @@ if cuda.available:
     import cupy as cp
 
 
-class PSROIAlign2D(function.Function):
+class PSROIAverageAlign2D(function.Function):
 
     def __init__(
             self, out_c, out_h, out_w, spatial_scale,
@@ -319,7 +319,7 @@ class PSROIAlign2D(function.Function):
             output_val /= count;
 
             top_data = output_val;
-            ''', 'psroi_align_2d_fwd'
+            ''', 'psroi_average_align_2d_fwd'
         )(bottom_data, bottom_rois, bottom_roi_indices,
           self.spatial_scale, channels, height, width,
           self.out_c, self.out_h, self.out_w,
@@ -577,7 +577,7 @@ class PSROIAlign2D(function.Function):
                     }
                 }
             }
-            ''', 'psroi_align_2d_bwd'
+            ''', 'psroi_average_align_2d_bwd'
         )(gy[0], bottom_rois, bottom_roi_indices,
           self.spatial_scale, channels, height, width,
           self.out_c, self.out_h, self.out_w,
@@ -586,10 +586,10 @@ class PSROIAlign2D(function.Function):
         return bottom_diff, None, None
 
 
-def psroi_align_2d(
+def psroi_average_align_2d(
         x, rois, roi_indices, out_c, out_h, out_w,
         spatial_scale, group_size, sampling_ratio=-1
 ):
-    return PSROIAlign2D(
+    return PSROIAverageAlign2D(
         out_c, out_h, out_w, spatial_scale,
         group_size, sampling_ratio)(x, rois, roi_indices)
