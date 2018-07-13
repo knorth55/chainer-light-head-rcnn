@@ -98,6 +98,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
             resnet_initialW=None, rpn_initialW=None,
+            global_module_initialW=None,
             loc_initialW=None, score_initialW=None,
             proposal_creator_params=None):
         param, path = utils.prepare_pretrained_model(
@@ -107,6 +108,8 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             resnet_initialW = chainer.initializers.HeNormal()
         if rpn_initialW is None:
             rpn_initialW = chainer.initializers.Normal(0.01)
+        if global_module_initialW is None:
+            global_module_initialW = chainer.initializers.Normal(0.01)
         if loc_initialW is None:
             loc_initialW = chainer.initializers.Normal(0.001)
         if score_initialW is None:
@@ -129,6 +132,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             param['n_fg_class'] + 1,
             roi_size=roi_size,
             spatial_scale=1. / self.feat_stride,
+            global_module_initialW=global_module_initialW,
             loc_initialW=loc_initialW,
             score_initialW=score_initialW
         )
