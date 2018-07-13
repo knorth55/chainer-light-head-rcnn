@@ -109,7 +109,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         img_size = (H, W)
 
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
-        rpn_locs, rpn_scores, rois, _, anchor = \
+        rpn_locs, rpn_scores, rois, roi_indices, anchor = \
             self.light_head_rcnn.rpn(rpn_features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
@@ -166,8 +166,8 @@ def _ohem_loss(
     roi_cls_loc_loss = roi_loc_loss.array + roi_cls_loss.array
     n_ohem_sample = min(n_ohem_sample, n_sample)
     indices = roi_cls_loc_loss.argsort(axis=0)[::-1][:n_ohem_sample]
-    roi_loc_loss = F.sum(roi_loc_loss[indices]) / len(indices)
-    roi_cls_loss = F.sum(roi_cls_loss[indices]) / len(indices)
+    roi_loc_loss = F.sum(roi_loc_loss[indices]) / n_ohem_sample
+    roi_cls_loss = F.sum(roi_cls_loss[indices]) / n_ohem_sample
 
     return roi_loc_loss, roi_cls_loss
 
