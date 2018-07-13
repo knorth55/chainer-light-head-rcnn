@@ -13,6 +13,7 @@ from chainercv.chainer_experimental.datasets.sliceable \
 from chainercv.datasets import coco_bbox_label_names
 from chainercv.datasets import COCOBboxDataset
 from chainercv.extensions import DetectionCOCOEvaluator
+from chainercv.links.model.ssd import GradientScaling
 from chainercv import transforms
 import chainermn
 
@@ -92,6 +93,16 @@ def main():
     optimizer = chainermn.create_multi_node_optimizer(
         chainer.optimizers.MomentumSGD(momentum=0.9), comm)
     optimizer.setup(model)
+
+    global_context_module = model.light_head_rcnn.head.global_context_module
+    global_context_module.col_max.W.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.col_max.b.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.col.W.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.col.b.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.row_max.W.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.row_max.b.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.row.W.update_rule.add_hook(GradientScaling(3.0))
+    global_context_module.row.b.update_rule.add_hook(GradientScaling(3.0))
     optimizer.add_hook(chainer.optimizer.WeightDecay(rate=0.0001))
 
     for param in model.params():
