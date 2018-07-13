@@ -48,7 +48,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
 
     def __init__(
             self, light_head_rcnn,
-            rpn_sigma=3., roi_sigma=1., n_ohem_sampling=256,
+            rpn_sigma=3., roi_sigma=1., n_ohem_sample=256,
             anchor_target_creator=AnchorTargetCreator(),
             proposal_target_creator=ProposalTargetCreator()
     ):
@@ -57,7 +57,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
             self.light_head_rcnn = light_head_rcnn
         self.rpn_sigma = rpn_sigma
         self.roi_sigma = roi_sigma
-        self.n_ohem_sampling = n_ohem_sampling
+        self.n_ohem_sample = n_ohem_sample
 
         self.anchor_target_creator = anchor_target_creator
         self.proposal_target_creator = proposal_target_creator
@@ -109,8 +109,8 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         img_size = (H, W)
 
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = self.faster_rcnn.rpn(
-            rpn_features, img_size, scale)
+        rpn_locs, rpn_scores, rois, roi_indices, anchor = \
+            self.light_head_rcnn.rpn(rpn_features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
         bbox = bboxes[0]
@@ -124,7 +124,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
             roi, bbox, label,
             self.loc_normalize_mean, self.loc_normalize_std)
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
-        roi_cls_loc, roi_score = self.faster_rcnn.head(
+        roi_cls_loc, roi_score = self.light_head_rcnn.head(
             roi_features, sample_roi, sample_roi_index)
 
         # RPN losses
@@ -137,7 +137,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         # Losses for outputs of the head.
         roi_loc_loss, roi_cls_loss = _ohem_loss(
             roi_score, roi_cls_loc, gt_roi_label, gt_roi_loc,
-            self.n_ohem_sampling, self.roi_sigma)
+            self.n_ohem_sample, self.roi_sigma)
         roi_loc_loss = 2 * roi_loc_loss
 
         loss = rpn_loc_loss + rpn_cls_loss + roi_loc_loss + roi_cls_loss
@@ -152,9 +152,9 @@ class LightHeadRCNNTrainChain(chainer.Chain):
 
 def _ohem_loss(
         roi_score, roi_cls_loc, gt_roi_label, gt_roi_loc,
-        n_sampling, roi_sigma=1.0
+        n_ohem_sample, roi_sigma=1.0
 ):
-    xp = cuda.get_device_from_array(roi_cls_loc)
+    xp = cuda.get_array_module(roi_cls_loc)
     n_sample = roi_cls_loc.shape[0]
     roi_cls_loc = roi_cls_loc.reshape((n_sample, -1, 4))
     roi_loc = roi_cls_loc[xp.arange(n_sample), gt_roi_label]
@@ -162,11 +162,11 @@ def _ohem_loss(
         roi_loc, gt_roi_loc, gt_roi_label, roi_sigma, reduce='no')
     roi_cls_loss = F.softmax_cross_entropy(
         roi_score, gt_roi_label, reduce='no')
-    assert roi_cls_loc.shape == roi_cls_loss.shape
+    assert roi_loc_loss.shape == roi_cls_loss.shape
 
     roi_cls_loc_loss = roi_loc_loss.array + roi_cls_loss.array
-    n_sampling = np.min(n_sampling, len(roi_cls_loc_loss))
-    indices = roi_cls_loc_loss.argsort(axis=0)[::-1][:n_sampling]
+    n_ohem_sample = min(n_ohem_sample, n_sample)
+    indices = roi_cls_loc_loss.argsort(axis=0)[::-1][:n_ohem_sample]
     roi_loc_loss = F.sum(roi_loc_loss[indices]) / len(indices)
     roi_cls_loss = F.sum(roi_cls_loss[indices]) / len(indices)
 
@@ -181,11 +181,11 @@ def _smooth_l1_loss_base(x, t, in_weight, sigma):
 
     y = (flag * (sigma2 / 2.) * F.square(diff) +
          (1 - flag) * (abs_diff - 0.5 / sigma2))
-    return y
+    return F.sum(y, axis=1)
 
 
 def _fast_rcnn_loc_loss(pred_loc, gt_loc, gt_label, sigma, reduce='mean'):
-    xp = chainer.backends.cuda.get_array_module(pred_loc)
+    xp = cuda.get_array_module(pred_loc)
 
     in_weight = xp.zeros_like(gt_loc)
     # Localization loss is calculated only for positive rois.
