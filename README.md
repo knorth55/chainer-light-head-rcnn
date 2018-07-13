@@ -15,7 +15,7 @@ Requirement
 - [CuPy](https://github.com/cupy/cupy)
 - [Chainer](https://github.com/chainer/chainer)
 - [ChainerCV](https://github.com/chainer/chainercv)
-- OpenCV2
+- OpenCV
 
 Additional Requirement
 ----------------------
@@ -26,8 +26,10 @@ Additional Requirement
 TODO
 ----
 - COCO
-  - [ ] Reproduce original repo training accuracy
-  - [ ] Refine evaluation code
+  - [x] Add inference script. 
+  - [ ] Reproduce original repo inference accuracy.
+  - [x] Add training script. 
+  - [ ] Reproduce original repo training accuracy.
 
 Installation
 ------------
@@ -36,13 +38,14 @@ We recommend to use [Anacoda](https://anaconda.org/).
 
 ```bash
 # Requirement installation
-conda create -n fcis python=3.6
-conda install -c menpo opencv
+conda create -n light-head-rcnn python=3.6
 source activate light-head-rcnn
+pip install opencv-python
 pip install cupy
 
 # Installation
 git clone https://github.com/knorth55/chainer-light-head-rcnn.git
+cd chainer-light-head-rcnn/
 pip install -e .
 ```
 
@@ -50,7 +53,7 @@ Inference
 ---------
 ```bash
 cd examples/
-python demo.py <image.jpg> --gpu <gpu>
+python demo.py <imagepath> --gpu <gpu>
 ```
 
 Training
