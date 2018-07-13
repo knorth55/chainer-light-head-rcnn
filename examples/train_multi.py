@@ -2,6 +2,7 @@ from __future__ import division
 
 import argparse
 import numpy as np
+import random
 
 import chainer
 from chainer.training import extensions
@@ -49,7 +50,7 @@ def main():
         description='ChainerCV training example: LightHeadRCNN')
     parser.add_argument('--out', '-o', default='result',
                         help='Output directory')
-    parser.add_argument('--seed', '-s', type=int, default=0)
+    parser.add_argument('--seed', '-s', type=int, default=1234)
     args = parser.parse_args()
 
     # chainermn
@@ -57,6 +58,7 @@ def main():
     device = comm.intra_rank
 
     np.random.seed(args.seed)
+    random.seed(args.seed)
 
     label_names = coco_bbox_label_names
     train_dataset = ConcatenatedDataset(
