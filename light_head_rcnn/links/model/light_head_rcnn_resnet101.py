@@ -77,7 +77,14 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
     """
 
     _models = {
-     }
+        'coco_converted': {
+            'param': {'n_fg_class': 80},
+            'url': 'https://github.com/knorth55/'
+            'chainer-light-head-rcnn/releases/download/v0.0/'
+            'light_head_rcnn_resnet101_converted_2018_07_12.npz',
+            'cv2': True
+        },
+    }
     feat_stride = 16
     proposal_creator_params = {
         'nms_thresh': 0.7,
@@ -101,6 +108,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             global_module_initialW=None,
             loc_initialW=None, score_initialW=None,
             proposal_creator_params=None):
+
         param, path = utils.prepare_pretrained_model(
             {'n_fg_class': n_fg_class}, pretrained_model, self._models)
 
