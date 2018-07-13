@@ -109,7 +109,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         img_size = (H, W)
 
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
-        rpn_locs, rpn_scores, rois, roi_indices, anchor = \
+        rpn_locs, rpn_scores, rois, _, anchor = \
             self.light_head_rcnn.rpn(rpn_features, img_size, scale)
 
         # Since batch size is one, convert variables to singular form
@@ -121,8 +121,7 @@ class LightHeadRCNNTrainChain(chainer.Chain):
 
         # Sample RoIs and forward
         sample_roi, gt_roi_loc, gt_roi_label = self.proposal_target_creator(
-            roi, bbox, label,
-            self.loc_normalize_mean, self.loc_normalize_std)
+            roi, bbox, label, self.loc_normalize_mean, self.loc_normalize_std)
         sample_roi_index = self.xp.zeros((len(sample_roi),), dtype=np.int32)
         roi_cls_loc, roi_score = self.light_head_rcnn.head(
             roi_features, sample_roi, sample_roi_index)
