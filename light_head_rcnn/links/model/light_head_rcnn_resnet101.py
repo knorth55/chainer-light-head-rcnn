@@ -80,7 +80,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
         'coco_converted': {
             'param': {'n_fg_class': 80},
             'url': 'https://github.com/knorth55/'
-            'chainer-light-head-rcnn/releases/download/v0.0/'
+            'chainer-light-head-rcnn/releases/download/v0.0.0/'
             'light_head_rcnn_resnet101_converted_2018_07_12.npz',
             'cv2': True
         },
