@@ -22,7 +22,7 @@ install:
   - source activate light-head-rcnn 
   - conda install -c menpo opencv
   - pip install Cython
-  - pip install 'git+https://github.com/pdollar/coco.git#egg=pycocotools&subdirectory=PythonAPI'
+  - pip install 'git+https://github.com/cocodataset/cocoapi.git#egg=pycocotools&subdirectory=PythonAPI'
   - pip install -r requirements.txt
   - pip install -e .
 
