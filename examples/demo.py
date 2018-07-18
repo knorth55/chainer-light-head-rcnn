@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import chainer
 from chainercv.datasets import coco_bbox_label_names
 from chainercv import utils
-from chainercv.visualizations import vis_bbox
 
 from light_head_rcnn.links import LightHeadRCNNResNet101
+from light_head_rcnn.visualizations import vis_bbox
 
 
 def main():
