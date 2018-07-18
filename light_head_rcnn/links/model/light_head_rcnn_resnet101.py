@@ -91,9 +91,9 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
         'n_train_pre_nms': 12000,
         'n_train_post_nms': 2000,
         'n_test_pre_nms': 6000,
-        'n_test_post_nms': 300,
+        'n_test_post_nms': 1000,
         'force_cpu_nms': False,
-        'min_size': 0
+        'min_size': 0,
     }
 
     def __init__(
@@ -107,15 +107,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             resnet_initialW=None, rpn_initialW=None,
             global_module_initialW=None,
             loc_initialW=None, score_initialW=None,
-            proposal_creator_params={
-                'nms_thresh': 0.7,
-                'n_train_pre_nms': 12000,
-                'n_train_post_nms': 2000,
-                'n_test_pre_nms': 6000,
-                'n_test_post_nms': 1000,
-                'force_cpu_nms': False,
-                'min_size': 0,
-            }
+            proposal_creator_params=None,
     ):
 
         param, path = utils.prepare_pretrained_model(
