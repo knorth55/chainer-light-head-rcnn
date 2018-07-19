@@ -107,7 +107,7 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             self,
             n_fg_class=None,
             pretrained_model=None,
-            min_size=600, max_size=1000, roi_size=7,
+            min_size=800, max_size=1333, roi_size=7,
             ratios=[0.5, 1, 2], anchor_scales=[2, 4, 8, 16, 32],
             loc_normalize_mean=(0., 0., 0., 0.),
             loc_normalize_std=(0.1, 0.1, 0.2, 0.2),
