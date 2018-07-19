@@ -84,6 +84,13 @@ class LightHeadRCNNResNet101(LightHeadRCNN):
             'light_head_rcnn_resnet101_converted_2018_07_12.npz',
             'cv2': True
         },
+        'coco': {
+            'param': {'n_fg_class': 80},
+            'url': 'https://github.com/knorth55/'
+            'chainer-light-head-rcnn/releases/download/v0.0.0/'
+            'light_head_rcnn_resnet101_trained_2018_07_19.npz',
+            'cv2': True
+        },
     }
     feat_stride = 16
     proposal_creator_params = {

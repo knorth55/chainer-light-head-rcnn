@@ -13,7 +13,7 @@ from light_head_rcnn.links import LightHeadRCNNResNet101
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--pretrained-model', default='coco_converted')
+    parser.add_argument('--pretrained-model', default='coco')
     parser.add_argument('--gpu', type=int, default=-1)
     args = parser.parse_args()
 
