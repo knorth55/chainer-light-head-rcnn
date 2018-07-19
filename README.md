@@ -59,7 +59,11 @@ python demo.py <imagepath> --gpu <gpu>
 Training
 --------
 
-**In Progress**
+```bash
+cd examples/
+mpiexec -n <n_gpu> python train_multi.py
+```
+
 
 LICENSE
 -------
