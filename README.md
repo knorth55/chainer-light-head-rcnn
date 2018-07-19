@@ -24,13 +24,6 @@ Additional Requirement
   - [pycocotools](https://github.com/cocodataset/cocoapi)
 
 
-TODO
-----
-- COCO
-  - [x] Add inference script. 
-  - [ ] Reproduce original accuracy. 
-  - [x] Add training script. 
-
 Evaluation Score
 ----------------
 
@@ -73,6 +66,12 @@ cd examples/
 mpiexec -n <n_gpu> python train_multi.py
 ```
 
+TODO
+----
+- COCO
+  - [x] Add inference script.
+  - [x] Add training script.
+  - [ ] Reproduce original accuracy.
 
 LICENSE
 -------
