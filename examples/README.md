@@ -45,7 +45,7 @@ python eval_coco.py --gpu <gpu>
 
 Convert model to chainer model.
 
-Original tensorflow parameters can be downloaded [here](https://github.com/knorth55/chainer-light-head-rcnn/releases/download/v0.0/tf_light_head_rcnn_extracted_2018_07_12.npz).
+Original tensorflow parameters can be downloaded [here](https://github.com/knorth55/chainer-light-head-rcnn/releases/download/v0.0/tf_light_head_rcnn_resnet101_extracted_2018_07_12.npz).
 
 ```bash
 python tfnpz2npz.py <tfmodelpath> --out <chainermodelpath>
