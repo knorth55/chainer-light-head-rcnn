@@ -10,16 +10,14 @@ I recommend to use GPUs.
 
 ## Inference
 
-Converted model can be dowloaded [here](https://github.com/knorth55/chainer-light-head-rcnn/releases/download/v0.0/light_head_rcnn_resnet101_converted_2018_07_12.npz).
+Trained model can be dowloaded [here](https://github.com/knorth55/chainer-light-head-rcnn/releases/download/v0.0/light_head_rcnn_resnet101_trained_2018_07_19.npz).
 
-This model is converted from one trained by original repo.
+This model is trained with this repository.
 
 ```bash
 python demo.py --gpu <gpu>
 ```
 ## Training
-
-**In progress**
 
 ### Requirements
 - [Cython](http://cython.org/)

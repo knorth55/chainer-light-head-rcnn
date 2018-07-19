@@ -23,13 +23,21 @@ Additional Requirement
   - [Cython](http://cython.org/)
   - [pycocotools](https://github.com/cocodataset/cocoapi)
 
+
 TODO
 ----
 - COCO
   - [x] Add inference script. 
-  - [ ] Reproduce original repo inference accuracy.
+  - [ ] Reproduce original accuracy. 
   - [x] Add training script. 
-  - [ ] Reproduce original repo training accuracy.
+
+Evaluation Score
+----------------
+
+| Implementation | mAP@0.5:0.95/all | mAP@0.5/all | mAP@0.75/all | mAP:0.5:0.95/small | mAP:0.5:0.95/medium | mAP:0.5:0.95/large |
+|:--------------:|:----------------:|:-----------:|:------------:|:------------------:|:-------------------:|:------------------:|
+| [Original](https://github.comzengarden/light_head_rcnn) | 0.400 | 0.621 | 0.429 | 0.225 | 0.446 | 0.540 |
+| Ours | 0.373 | 0.584 | 0.394 | 0.179 | 0.416 | 0.539 |
 
 Installation
 ------------
@@ -51,12 +59,6 @@ pip install -e .
 
 Inference
 ---------
-
-| Implementation | mAP@0.5:0.95/all | mAP@0.5/all | mAP@0.75/all | mAP:0.5:0.95/small | mAP:0.5:0.95/medium | mAP:0.5:0.95/large |
-|:--------------:|:----------------:|:-----------:|:------------:|:------------------:|:-------------------:|:------------------:|
-| [Original](https://github.comzengarden/light_head_rcnn) | 0.400 | 0.621 | 0.429 | 0.225 | 0.446 | 0.540 |
-| Ours | 0.373 | 0.584 | 0.394 | 0.179 | 0.416 | 0.539 |
-
 
 ```bash
 cd examples/
