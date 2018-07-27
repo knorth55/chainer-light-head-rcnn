@@ -105,12 +105,28 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         batch_size, _, H, W = imgs.shape
         img_size = (H, W)
 
+        if any(len(b) == 0 for b in bboxes):
+            return chainer.Variable(self.xp.array(0, dtype=np.float32))
+
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
             self.light_head_rcnn.rpn(rpn_features, img_size, scales)
+        rpn_locs = F.concat(rpn_locs, axis=0)
+        rpn_scores = F.concat(rpn_scores, axis=0)
 
-        if any(len(b) == 0 for b in bboxes):
-            return chainer.Variable(self.xp.array(0, dtype=np.float32))
+        gt_rpn_locs = []
+        gt_rpn_labels = []
+        for bbox in bboxes:
+            gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
+                bbox, anchor, img_size)
+            if cuda.get_array_module(rpn_locs.array) != np:
+                gt_rpn_loc = cuda.to_gpu(gt_rpn_loc)
+                gt_rpn_label = cuda.to_gpu(gt_rpn_label)
+            gt_rpn_locs.append(gt_rpn_loc)
+            gt_rpn_labels.append(gt_rpn_label)
+            del gt_rpn_loc, gt_rpn_label
+        gt_rpn_locs = self.xp.concatenate(gt_rpn_locs, axis=0)
+        gt_rpn_labels = self.xp.concatenate(gt_rpn_labels, axis=0)
 
         batch_indices = range(batch_size)
         sample_rois = []
@@ -143,18 +159,6 @@ class LightHeadRCNNTrainChain(chainer.Chain):
             roi_features, sample_rois, sample_roi_indices)
 
         # RPN losses
-        gt_rpn_locs = []
-        gt_rpn_labels = []
-        for bbox, rpn_loc, rpn_score in zip(bboxes, rpn_locs, rpn_scores):
-            gt_rpn_loc, gt_rpn_label = self.anchor_target_creator(
-                bbox, anchor, img_size)
-            gt_rpn_locs.append(gt_rpn_loc)
-            gt_rpn_labels.append(gt_rpn_label)
-            del gt_rpn_loc, gt_rpn_label
-        gt_rpn_locs = self.xp.concatenate(gt_rpn_locs, axis=0)
-        gt_rpn_labels = self.xp.concatenate(gt_rpn_labels, axis=0)
-        rpn_locs = F.concat(rpn_locs, axis=0)
-        rpn_scores = F.concat(rpn_scores, axis=0)
         rpn_loc_loss = _fast_rcnn_loc_loss(
             rpn_locs, gt_rpn_locs, gt_rpn_labels, self.rpn_sigma)
         rpn_cls_loss = F.softmax_cross_entropy(rpn_scores, gt_rpn_labels)
