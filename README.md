@@ -71,7 +71,7 @@ TODO
 - COCO
   - [x] Add inference script.
   - [x] Add training script.
-  - [ ] Reproduce original accuracy.
+  - [x] Reproduce original accuracy.
 
 LICENSE
 -------
