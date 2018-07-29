@@ -3,7 +3,8 @@ chainer-light-head-rcnn - Light Head RCNN
 
 ![Build Status](https://travis-ci.com/knorth55/chainer-light-head-rcnn.svg?branch=master)
 
-![Example](static/coco_example.png)
+<img src="static/coco_example.png" width="75%" />
+<img src="static/coco_example_1.png" width="75%" />
 
 This is [Chainer](https://github.com/chainer/chainer) implementation of [Light-Head R-CNN: In Defense of Two-Stage Object Detector](https://arxiv.org/abs/1711.07264).
 
