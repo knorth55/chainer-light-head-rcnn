@@ -42,7 +42,7 @@ mpiexec -n <gpu_num> python train_multi.py
 
 | Implementation | mAP@0.5:0.95/all | mAP@0.5/all | mAP@0.75/all | mAP:0.5:0.95/small | mAP:0.5:0.95/medium | mAP:0.5:0.95/large |
 |:--------------:|:----------------:|:-----------:|:------------:|:------------------:|:-------------------:|:------------------:|
-| [Original](https://github.comzengarden/light_head_rcnn) | 0.400 | 0.621 | 0.429 | 0.225 | 0.446 | 0.540 |
+| [Original](https://github.com/zengarden/light_head_rcnn) | 0.400 | 0.621 | 0.429 | 0.225 | 0.446 | 0.540 |
 | Ours | 0.391 | 0.607 | 0.419 | 0.212 | 0.428 | 0.541 |
 
 ### Command
