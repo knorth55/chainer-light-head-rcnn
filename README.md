@@ -26,7 +26,7 @@ Additional Requirement
 - For training
   - [OpenMPI with CUDA](https://www.open-mpi.org/)
   - [NCCL](https://developer.nvidia.com/nccl)
-  - [ChaineMN](https://github.com/chainer/chainermn)
+  - [ChainerMN](https://github.com/chainer/chainermn)
 
 
 Evaluation Score
