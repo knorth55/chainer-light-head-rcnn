@@ -23,6 +23,10 @@ Additional Requirement
 - For COCO Dataset class
   - [Cython](http://cython.org/)
   - [pycocotools](https://github.com/cocodataset/cocoapi)
+- For training
+  - [OpenMPI with CUDA](https://www.open-mpi.org/)
+  - [NCCL](https://developer.nvidia.com/nccl)
+  - [ChaineMN](https://github.com/chainer/chainermn)
 
 
 Evaluation Score
