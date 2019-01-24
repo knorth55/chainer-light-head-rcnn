@@ -71,13 +71,6 @@ cd examples/
 mpiexec -n <n_gpu> python train_multi.py
 ```
 
-TODO
-----
-- COCO
-  - [x] Add inference script.
-  - [x] Add training script.
-  - [x] Reproduce original accuracy.
-
 LICENSE
 -------
 [MIT LICENSE](LICENSE)
