@@ -105,9 +105,6 @@ class LightHeadRCNNTrainChain(chainer.Chain):
         batch_size, _, H, W = imgs.shape
         img_size = (H, W)
 
-        if any(len(b) == 0 for b in bboxes):
-            return chainer.Variable(self.xp.array(0, dtype=np.float32))
-
         rpn_features, roi_features = self.light_head_rcnn.extractor(imgs)
         rpn_locs, rpn_scores, rois, roi_indices, anchor = \
             self.light_head_rcnn.rpn(rpn_features, img_size, scales)

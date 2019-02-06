@@ -15,6 +15,7 @@ from chainercv.chainer_experimental.datasets.sliceable \
     import ConcatenatedDataset
 from chainercv.chainer_experimental.datasets.sliceable \
     import TransformDataset
+from chainercv.chainer_experimental.training.extensions import make_shift
 from chainercv.datasets import coco_bbox_label_names
 from chainercv.datasets import COCOBboxDataset
 from chainercv.extensions import DetectionCOCOEvaluator
@@ -22,7 +23,6 @@ from chainercv.links.model.ssd import GradientScaling
 from chainercv import transforms
 import chainermn
 
-from light_head_rcnn.extensions import ManualScheduler
 from light_head_rcnn.links import LightHeadRCNNResNet101
 from light_head_rcnn.links import LightHeadRCNNTrainChain
 
@@ -96,26 +96,37 @@ def main():
     np.random.seed(args.seed)
     random.seed(args.seed)
 
-    label_names = coco_bbox_label_names
-    train_dataset = ConcatenatedDataset(
-        COCOBboxDataset(split='train'),
-        COCOBboxDataset(split='valminusminival'))
-    test_dataset = COCOBboxDataset(
-        split='minival', use_crowded=True,
-        return_crowded=True, return_area=True)
-
+    # model
     light_head_rcnn = LightHeadRCNNResNet101(
-        n_fg_class=len(label_names), pretrained_model='imagenet')
+        pretrained_model='imagenet',
+        n_fg_class=len(coco_bbox_label_names))
     light_head_rcnn.use_preset('evaluate')
     model = LightHeadRCNNTrainChain(light_head_rcnn)
-
     chainer.cuda.get_device_from_id(device).use()
     model.to_gpu()
 
-    train_dataset = TransformDataset(
-        train_dataset, ('img', 'bbox', 'label', 'scale'),
-        Transform(model.light_head_rcnn))
+    # train dataset
+    train_dataset = COCOBboxDataset(
+        year='2014', split='train')
+    vmml_dataset = COCOBboxDataset(
+        year='2014', split='valminusminival')
 
+    # filter non-annotated data
+    train_indices = np.array(
+        [i for i, label in enumerate(train_dataset.slice[:, ['label']])
+         if len(label[0]) > 0],
+        dtype=np.int32)
+    train_dataset = train_dataset.slice[train_indices]
+    vmml_indices = np.array(
+        [i for i, label in enumerate(vmml_dataset.slice[:, ['label']])
+         if len(label[0]) > 0],
+        dtype=np.int32)
+    vmml_dataset = vmml_dataset.slice[vmml_indices]
+
+    train_dataset = TransformDataset(
+        ConcatenatedDataset(train_dataset, vmml_dataset),
+        ('img', 'bbox', 'label', 'scale'),
+        Transform(model.light_head_rcnn))
     if comm.rank == 0:
         indices = np.arange(len(train_dataset))
     else:
@@ -126,6 +137,9 @@ def main():
         train_dataset, batch_size=args.batch_size)
 
     if comm.rank == 0:
+        test_dataset = COCOBboxDataset(
+            year='2014', split='minival', use_crowded=True,
+            return_crowded=True, return_area=True)
         test_iter = chainer.iterators.SerialIterator(
             test_dataset, batch_size=1, repeat=False, shuffle=False)
 
@@ -160,17 +174,17 @@ def main():
     updater = chainer.training.updater.StandardUpdater(
         train_iter, optimizer, converter=converter,
         device=device)
-
     trainer = chainer.training.Trainer(
         updater, (30, 'epoch'), out=args.out)
 
-    def lr_schedule(updater):
+    @make_shift('lr')
+    def lr_scheduler(trainer):
         base_lr = 0.0005 * 1.25 * args.batch_size * comm.size
         warm_up_duration = 500
         warm_up_rate = 1 / 3
 
-        iteration = updater.iteration
-        epoch = updater.epoch
+        iteration = trainer.updater.iteration
+        epoch = trainer.updater.epoch
         if iteration < warm_up_duration:
             rate = warm_up_rate \
                 + (1 - warm_up_rate) * iteration / warm_up_duration
@@ -180,9 +194,9 @@ def main():
             rate = 0.1
         else:
             rate = 0.01
-        return base_lr * rate
+        return rate * base_lr
 
-    trainer.extend(ManualScheduler('lr', lr_schedule))
+    trainer.extend(lr_scheduler)
 
     if comm.rank == 0:
         # interval
@@ -213,7 +227,6 @@ def main():
             'main/roi_cls_loss',
             'validation/main/map/iou=0.50:0.95/area=all/max_dets=100',
         ]
-
         trainer.extend(
             extensions.PrintReport(report_items), trigger=print_interval)
         trainer.extend(
@@ -228,7 +241,8 @@ def main():
 
         trainer.extend(
             DetectionCOCOEvaluator(
-                test_iter, model.light_head_rcnn, label_names=label_names),
+                test_iter, model.light_head_rcnn,
+                label_names=coco_bbox_label_names),
             trigger=ManualScheduleTrigger([20, 26], 'epoch'))
         trainer.extend(extensions.dump_graph('main/loss'))
 
