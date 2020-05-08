@@ -1,3 +1,5 @@
+# This project has moved to [ChainerCV](https://github.com/chainer/chainercv).
+
 chainer-light-head-rcnn - Light Head RCNN
 =========================================
 
